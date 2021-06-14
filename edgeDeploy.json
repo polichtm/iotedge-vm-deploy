@@ -64,7 +64,7 @@
     "imageOffer": "UbuntuServer",
     "nicName": "[concat('nic-', uniquestring(parameters('vmName')))]",
     "vmName": "[concat('vm-', uniquestring(parameters('vmName')))]",
-    "vmDnsName": "[uniqueString( resourceGroup().id, deployment().name )]",
+    "vmDnsName": "[concat('vm', uniqueString( resourceGroup().id, deployment().name ))]",
     "virtualNetworkName": "[concat('vnet-', uniquestring(parameters('vmName')))]",
     "publicIPAddressName": "[concat('ip-', parameters('vmName'))]",
     "addressPrefix": "10.0.0.0/16",
