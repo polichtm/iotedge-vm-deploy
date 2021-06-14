@@ -2,7 +2,7 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "dnsLabelPrefix": {
+    "vmName": {
       "type": "string",
       "metadata": {
         "description": "Unique DNS Name for the Storage Account where the Virtual Machine's disks will be placed."
@@ -36,7 +36,7 @@
     },
     "authenticationType": {
       "type": "string",
-      "defaultValue": "sshPublicKey",
+      "defaultValue": "password",
       "allowedValues": [
         "sshPublicKey",
         "password"
@@ -45,7 +45,7 @@
         "description": "Type of authentication to use on the Virtual Machine. SSH key is recommended."
       }
     },
-    "adminPasswordOrKey": {
+      "adminPasswordOrKey": {
       "type": "securestring",
       "metadata": {
         "description": "SSH Key or password for the Virtual Machine. SSH key is recommended."
@@ -62,12 +62,13 @@
   "variables": {
     "imagePublisher": "Canonical",
     "imageOffer": "UbuntuServer",
-    "nicName": "[concat('nic-', uniquestring(parameters('dnsLabelPrefix')))]",
-    "vmName": "[concat('vm-', uniquestring(parameters('dnsLabelPrefix')))]",
-    "virtualNetworkName": "[concat('vnet-', uniquestring(parameters('dnsLabelPrefix')))]",
-    "publicIPAddressName": "[concat('ip-', parameters('dnsLabelPrefix'))]",
+    "nicName": "[concat('nic-', uniquestring(parameters('vmName')))]",
+    "vmName": "[concat('vm-', uniquestring(parameters('vmName')))]",
+    "vmDnsName: "[uniqueString( resourceGroup().id, deployment().name )]",
+    "virtualNetworkName": "[concat('vnet-', uniquestring(parameters('vmName')))]",
+    "publicIPAddressName": "[concat('ip-', parameters('vmName'))]",
     "addressPrefix": "10.0.0.0/16",
-    "subnet1Name": "[concat('subnet-', uniquestring(parameters('dnsLabelPrefix')))]",
+    "subnet1Name": "[concat('subnet-', uniquestring(parameters('vmName')))]",
     "subnet1Prefix": "10.0.0.0/24",
     "publicIPAddressType": "Dynamic",
     "storageAccountType": "Standard_LRS",
@@ -75,7 +76,7 @@
     "subnet1Ref": "[concat(variables('vnetID'),'/subnets/',variables('subnet1Name'))]",
     "apiVersion": "2015-06-15",
     "linuxConfiguration": {
-      "disablePasswordAuthentication": true,
+      "disablePasswordAuthentication": false,
       "ssh": {
         "publicKeys": [{
           "path": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
@@ -84,7 +85,7 @@
       }
     },
     "dcs": "[parameters('deviceConnectionString')]",
-    "networkSecurityGroupName": "[concat('nsg-', uniquestring(parameters('dnsLabelPrefix')))]",
+    "networkSecurityGroupName": "[concat('nsg-', uniquestring(parameters('vmName')))]",
     "sshRule": [{
       "name": "default-allow-22",
       "properties": {
@@ -108,7 +109,7 @@
       "properties": {
         "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
         "dnsSettings": {
-          "domainNameLabel": "[parameters('dnsLabelPrefix')]"
+          "domainNameLabel": "[variables('vmDnsName')]"
         }
       }
     },
@@ -212,7 +213,7 @@
   "outputs": {
     "Public SSH": {
       "type": "string",
-      "value": "[concat('ssh ', reference(resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))).osProfile.adminUsername, '@', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).dnsSettings.fqdn)]"
+      "value": "[concat('ssh ', reference(resourceId('Microsoft.Compute/virtualMachines', variables('vmDnsName'))).osProfile.adminUsername, '@', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).dnsSettings.fqdn)]"
     }
   }
 }
